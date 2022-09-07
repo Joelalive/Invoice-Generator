@@ -1,9 +1,9 @@
-<nav class="navbar navbar-expand-sm navbar-dark bg-secondary d-flex justify-content-between">
+<nav class="navbar navbar-expand-sm navbar-dark bg-dark d-flex justify-content-between">
     <a class="navbar-brand" href="#">INVOICE GENERATOR</a>
-    <div>
+    <!-- <div>
         <a class="text-white" href="https://github.com/ngdevelop-tech/angular-pdfmake-invoice-generator"
             target="_blank"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a>
-    </div>
+    </div> -->
 </nav>
 <form #invoiceForm="ngForm">
     <div class="container-fluid pt-2 mb-5">
@@ -44,12 +44,47 @@
                                         [(ngModel)]="invoice.dueDate" #DueDate="ngModel" required>
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="gstIn">GSTIN</label>
+                                    <input type="text" class="form-control" name="gstIn" id="gstIn"
+                                        [ngClass]="{'is-invalid': invoiceForm.submitted && GstIn.invalid}"
+                                        [(ngModel)]="invoice.gstIn" #GstIn="ngModel">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="place">PLACE OF SUPPLY</label>
+                                    <input type="text" class="form-control" name="place" id="place"
+                                        [ngClass]="{'is-invalid': invoiceForm.submitted && Place.invalid}"
+                                        [(ngModel)]="invoice.place" #Place="ngModel" required>
+                                </div>
+                            </div>
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <label for="address">Address</label>
+                                    <label for="Billaddress">Billing Address </label>
                                     <textarea class="form-control" name="address" id="address" row="3"
-                                        [ngClass]="{'is-invalid': invoiceForm.submitted && Address.invalid}"
-                                        [(ngModel)]="invoice.address" #Address="ngModel" required></textarea>
+                                        [ngClass]="{'is-invalid': invoiceForm.submitted && billAddress.invalid}"
+                                        [(ngModel)]="invoice.billTo" #billAddress="ngModel" required></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="Shipaddress">Shipping Address 
+                                        <div class="form-check">
+                                            <input (click)="toggleAddress(invoice.sameAsBilling)" [checked]="invoice.sameAsBilling" class="form-check-input" type="checkbox" id="flexCheckDefault">
+                                            <label class="form-check-label" for="flexCheckDefault">
+                                              Same as Billing Address
+                                            </label>
+                                          </div>
+                                    </label>
+                                    <textarea *ngIf="!invoice.sameAsBilling; else sameAddress" class="form-control" name="address" id="address" row="3"
+                                        [ngClass]="{'is-invalid': invoiceForm.submitted && shipAddress.invalid}"
+                                        [(ngModel)]="invoice.shipTo" #shipAddress="ngModel" required></textarea>
+                                    <ng-template #sameAddress>
+                                        <textarea class="form-control" name="sameAddress" id="sameAddress" row="3"
+                                        [value]="invoice.billTo" readonly></textarea>
+                                    </ng-template>
                                 </div>
                             </div>
                         </div>
@@ -63,14 +98,19 @@
                             <table class="table">
                                 <thead>
                                     <tr>
+                                        <th width="1%">#</th>
                                         <th width="25%">Product</th>
-                                        <th width="25%">Price</th>
-                                        <th width="25%">Quantity</th>
-                                        <th width="25%">Amount</th>
+                                        <th width="15%">Quantity</th>
+                                        <th width="25%">Rate</th>
+                                        <th width="15%">Tax %</th>
+                                        <th width="20%">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr *ngFor="let product of invoice.products; let i=index">
+                                        <td>
+                                        {{ i + 1 }}
+                                        </td>
                                         <td scope="row">
                                             <input type="text" class="form-control" name="productName{{i}}"
                                                 [ngClass]="{'is-invalid': invoiceForm.submitted && ProductName.invalid}"
@@ -78,14 +118,19 @@
                                                 required>
                                         </td>
                                         <td>
+                                            <input type="number" class="form-control" name="quantity{{i}}" id="quantity"
+                                                [ngClass]="{'is-invalid': invoiceForm.submitted && ProductQty.invalid}"
+                                                [(ngModel)]="product.qty" #ProductQty="ngModel" required>
+                                        </td>
+                                        <td>
                                             <input type="number" class="form-control" name="price{{i}}" id="price"
                                                 [ngClass]="{'is-invalid': invoiceForm.submitted && ProductPrice.invalid}"
                                                 [(ngModel)]="product.price" #ProductPrice="ngModel" required>
                                         </td>
                                         <td>
-                                            <input type="number" class="form-control" name="quantity{{i}}" id="quantity"
-                                                [ngClass]="{'is-invalid': invoiceForm.submitted && ProductQty.invalid}"
-                                                [(ngModel)]="product.qty" #ProductQty="ngModel" required>
+                                            <input type="number" class="form-control" name="tax{{i}}" id="tax"
+                                                [ngClass]="{'is-invalid': invoiceForm.submitted && ProductTax.invalid}"
+                                                [(ngModel)]="product.tax" #ProductTax="ngModel" required>
                                         </td>
                                         <td>
                                             {{product.price * product.qty || ''}}
@@ -98,7 +143,7 @@
                 </div>
                 <div class="card border-secondary mt-2">
                     <div class="card-body">
-                        <h4 class="card-title">Additional Details</h4>
+                        <h4 class="card-title">Notes</h4>
                         <div class="form-group">
                             <textarea class="form-control" name="additionalDetails" rows="3"
                                 [(ngModel)]="invoice.additionalDetails"></textarea>
@@ -108,12 +153,12 @@
 
             </div>
             <div class="col-md-4">
-                <button type="button" class="btn btn-secondary btn-lg btn-block"
+                <button type="submit" class="btn btn-dark btn-lg btn-block"
                     (click)="invoiceForm.valid ? generatePDF('download') : ''">Download Invoice</button>
-                <button type="button" class="btn btn-secondary btn-lg btn-block"
+                <button type="submit" class="btn btn-dark btn-lg btn-block"
                     (click)="invoiceForm.valid ? generatePDF('print') : ''">Print
                     Invoice</button>
-                <button type="submit" class="btn btn-secondary btn-lg btn-block"
+                <button type="submit" class="btn btn-dark btn-lg btn-block"
                     (click)="invoiceForm.valid ? generatePDF() : ''">Open
                     Invoice</button>
             </div>
@@ -122,9 +167,7 @@
 </form>
 <footer class="fixed-bottom">
     <div class="bg-light text-center p-2">
-        <h6>Made with 💗 by
-            <a class="twitter-follow-button" href="https://twitter.com/ankit_ngdevelop" target="_blank"> <i
-                    class="fa fa-twitter" aria-hidden="true"></i>Ankit_NgDevelop</a>.
+        <h6>copyrights @ Invoice Generator
         </h6>
     </div>
 </footer>

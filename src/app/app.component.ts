@@ -9,12 +9,17 @@ class Product {
   name: string = 'Test Product';
   price: number = 100;
   qty: number = 2;
+  tax: number = 5;
 }
 class Invoice {
   customerName: string = 'Test Customer';
-  address: string = '123 Address';
+  billTo: string = '123 Address';
+  sameAsBilling: boolean = true;
+  shipTo: string = '123 Address';
   contactNo: number = 1234567890;
   email: string = 'test@gmail.com';
+  gstIn: string = '33AUNPB4250A1ZB';
+  place: string = 'Tamil Nadu';
   dueDate: Date;
 
   products: Product[] = [];
@@ -40,11 +45,16 @@ export class AppComponent {
   getRandomId = (min = 0, max = 500000) => {
     min = Math.ceil(min);
     max = Math.floor(max);
-    const num =  Math.floor(Math.random() * (max - min + 1)) + min;
+    const num = Math.floor(Math.random() * (max - min + 1)) + min;
     return num.toString().padStart(6, "0")
   };
 
+  toggleAddress(value) {
+    this.invoice.sameAsBilling = !value;
+  }
+
   generatePDF(action = 'open') {
+
     let docDefinition = {
       content: [
         {
@@ -52,7 +62,8 @@ export class AppComponent {
             [
               {
                 text: 'SAAP FOODIEE',
-                bold: true
+                bold: true,
+                style: 'sectionHeader'
               },
               { text: '7904484642' },
               { text: '2/260-10, Therkur, Chinnakollapatti, Near Sadayampatti' },
@@ -63,19 +74,20 @@ export class AppComponent {
               {
                 text: 'TAX INVOICE',
                 bold: true,
-                alignment: 'right'
+                style: 'sectionHeader',
+                // alignment: 'right'
               },
               {
                 text: `Invoice No : ${this.getRandomId()}`,
-                alignment: 'right'
+                // alignment: 'right'
               },
               {
-                text: `Invoice Date: ${this.myFormattedDate}`,
-                alignment: 'right'
+                text: `Invoice Date : ${this.myFormattedDate}`,
+                // alignment: 'right'
               },
               {
                 text: `Due Date : ${this.pipe.transform(this.invoice.dueDate, 'dd-MM-yyyy')}`,
-                alignment: 'right'
+                // alignment: 'right'
 
               }
             ]
@@ -83,61 +95,85 @@ export class AppComponent {
           columnGap: 10
         },
         {
-          text: 'Customer Details',
-          style: 'sectionHeader'
+          text: '',
+          margin: [0, 0, 0, 15]
         },
         {
-          columns: [
-            [
-              {
-                text: this.invoice.customerName,
-                bold: true
-              },
-              { text: this.invoice.address },
-              { text: this.invoice.email },
-              { text: this.invoice.contactNo }
-            ],
-            [
-              {
-                text: `Date: ${new Date().toLocaleString()}`,
-                alignment: 'right'
-              },
-              {
-                text: `Bill No : ${((Math.random() * 1000).toFixed(0))}`,
-                alignment: 'right'
-              }
-            ]
-          ]
-        },
-        {
-          text: 'Order Details',
-          style: 'sectionHeader'
-        },
-        {
+          layout: 'noBorders', // optional
           table: {
             headerRows: 1,
-            widths: ['*', 'auto', 'auto', 'auto'],
+            widths: ['50%', '50%'],
             body: [
-              ['Product', 'Price', 'Quantity', 'Amount'],
-              ...this.invoice.products.map(p => ([p.name, p.price, p.qty, (p.price * p.qty).toFixed(2)])),
-              [{ text: 'Total Amount', colSpan: 3 }, {}, {}, this.invoice.products.reduce((sum, p) => sum + (p.qty * p.price), 0).toFixed(2)]
+              [{ text: 'Bill To', style: 'tableHeader' }, { text: 'Ship To', style: 'tableHeader' }],
             ]
           }
         },
         {
-          text: 'Additional Details',
+          text: '',
+          margin: [0, 0, 0, 5]
+        },
+        {
+          columns: [
+            [
+              // {
+              //   text: 'Bill To ',
+              //   bold: true,
+              //   style: 'sectionHeader',
+              // },
+              { text: this.invoice.customerName, bold: true },
+              { text: this.invoice.billTo },
+              { text: this.invoice.gstIn ? 'GSTIN : ' + this.invoice.gstIn : 'GSTIN : NA' },
+              { text: 'PLACE OF SUPPLY : ' + this.invoice.place },
+            ],
+            [
+              // {
+              //   text: 'Ship To',
+              //   bold: true,
+              //   style: 'sectionHeader',
+              //   alignment: 'right'
+              // },
+              {
+                text: this.invoice.customerName,
+                bold: true,
+                // alignment: 'right'
+              },
+              {
+                text: this.invoice.sameAsBilling ? this.invoice.billTo : this.invoice.shipTo,
+                // alignment: 'right'
+              }
+            ]
+          ],
+          columnGap: 10
+        },
+        {
+          text: '',
+          style: 'sectionHeader'
+        },
+        {
+          layout: 'lightHorizontalLines', // optional
+          table: {
+            headerRows: 1,
+            widths: ['1%', '49%', '10%', '10%', '10%', '20%'],
+            body: [
+              [{ text: '#', style: 'tableHeader' }, { text: 'ITEMS', style: 'tableHeader' }, { text: 'QTY', style: 'tableHeader' }, { text: 'RATE', style: 'tableHeader' }, { text: 'TAX', style: 'tableHeader' }, { text: 'AMOUNT', style: 'tableHeader' }],
+              ...this.invoice.products.map((p, index) => ([++index, p.name, p.qty, p.price, p.tax,(p.price * p.qty).toFixed(2)])),
+              [{ text: 'Total Amount', colSpan: 3 }, {}, {}, {}, {}, this.invoice.products.reduce((sum, p) => sum + (p.qty * p.price), 0).toFixed(2)]
+            ]
+          }
+        },
+        {
+          text: 'NOTES',
           style: 'sectionHeader'
         },
         {
           text: this.invoice.additionalDetails,
-          margin: [0, 0, 0, 15]
         },
-        {
-          columns: [
-            [{ qr: `${this.invoice.customerName}`, fit: '50' }],
-            [{ text: 'Signature', alignment: 'right', italics: true }],
-          ]
-        },
+        // {
+        //   columns: [
+        //     [{ qr: `${this.invoice.customerName}`, fit: '50' }],
+        //     [{ text: 'Signature', alignment: 'right', italics: true }],
+        //   ]
+        // },
         {
           text: 'Terms and Conditions',
           style: 'sectionHeader'
@@ -152,9 +188,19 @@ export class AppComponent {
       styles: {
         sectionHeader: {
           bold: true,
-          fontSize: 12,
-          margin: [0, 15, 0, 15]
+          fontSize: 11,
+          margin: [0, 15, 0, 5]
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 10,
+          fillOpacity: '0.25',
+          fillColor: '#e6e6e6'
         }
+      },
+      defaultStyle: {
+        fontSize: 9,
+        lineHeight: 1.2
       }
     };
 
